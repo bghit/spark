@@ -267,6 +267,8 @@
       <groupId>org.tachyonproject</groupId>
       <artifactId>tachyon-client</artifactId>
       <version>0.7.1</version>
+      <scope>system</scope>
+      <systemPath>/home/bogdan/tmp_spark_customized/tachyon/clients/client/target/tachyon-client-0.7.1-jar-with-dependencies.jar</systemPath>
       <exclusions>
         <exclusion>
           <groupId>org.apache.hadoop</groupId>
