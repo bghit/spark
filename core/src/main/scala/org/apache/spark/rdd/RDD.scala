@@ -1631,8 +1631,10 @@ abstract class RDD[T: ClassTag](
       if (!doCheckpointCalled) {
         doCheckpointCalled = true
         if (checkpointData.isDefined) {
+          println("We are checkpoiting")
           checkpointData.get.checkpoint()
         } else {
+          println("Recursive checkpoiting")
           dependencies.foreach(_.rdd.doCheckpoint())
         }
       }
