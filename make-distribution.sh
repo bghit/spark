@@ -35,7 +35,10 @@ DISTDIR="$SPARK_HOME/dist"
 SPARK_TACHYON=false
 TACHYON_VERSION="0.7.1"
 TACHYON_TGZ="tachyon-${TACHYON_VERSION}-bin.tar.gz"
-TACHYON_URL="https://github.com/amplab/tachyon/releases/download/v${TACHYON_VERSION}/${TACHYON_TGZ}"
+#TACHYON_URL="https://github.com/amplab/tachyon/releases/download/v${TACHYON_VERSION}/${TACHYON_TGZ}"
+TACHYON_GIT_URL="https://github.com/bghit/tachyon.git"
+# TODO: change this
+TACHYON_GIT_BRANCH="0.7.1-experiment"
 
 MAKE_TGZ=false
 NAME=none
@@ -228,28 +231,42 @@ if [ "$SPARK_TACHYON" == "true" ]; then
   pushd "$TMPD" > /dev/null
   echo "Fetching tachyon tgz"
 
-  TACHYON_DL="${TACHYON_TGZ}.part"
-  if [ $(command -v curl) ]; then
-    curl --silent -k -L "${TACHYON_URL}" > "${TACHYON_DL}" && mv "${TACHYON_DL}" "${TACHYON_TGZ}"
-  elif [ $(command -v wget) ]; then
-    wget --quiet "${TACHYON_URL}" -O "${TACHYON_DL}" && mv "${TACHYON_DL}" "${TACHYON_TGZ}"
-  else
-    printf "You do not have curl or wget installed. please install Tachyon manually.\n"
-    exit -1
-  fi
+  #TACHYON_DL="${TACHYON_TGZ}.part"
+  #if [ $(command -v curl) ]; then
+  #  curl --silent -k -L "${TACHYON_URL}" > "${TACHYON_DL}" && mv "${TACHYON_DL}" "${TACHYON_TGZ}"
+  #elif [ $(command -v wget) ]; then
+  #  wget --quiet "${TACHYON_URL}" -O "${TACHYON_DL}" && mv "${TACHYON_DL}" "${TACHYON_TGZ}"
+  #else
+  #  printf "You do not have curl or wget installed. please install Tachyon manually.\n"
+  #  exit -1
+  #fi
 
-  tar xzf "${TACHYON_TGZ}"
-  cp "tachyon-${TACHYON_VERSION}/core/target/tachyon-${TACHYON_VERSION}-jar-with-dependencies.jar" "$DISTDIR/lib"
+  # use git to checkout the specified branch
+  git clone ${TACHYON_GIT_URL} --branch ${TACHYON_GIT_BRANCH} --single-branch $TMPD/tachyon
+  pushd "$TMPD/tachyon" > /dev/null
+  $MVN -DskipTests package
+  popd > /dev/null
+
+  # copy necessary files
+  cp "$TMPD/tachyon/assembly/target/tachyon-assemblies-${TACHYON_VERSION}-jar-with-dependencies.jar" "$DISTDIR/lib"
   mkdir -p "$DISTDIR/tachyon/src/main/java/tachyon/web"
-  cp -r "tachyon-${TACHYON_VERSION}"/{bin,conf,libexec} "$DISTDIR/tachyon"
-  cp -r "tachyon-${TACHYON_VERSION}"/core/src/main/java/tachyon/web "$DISTDIR/tachyon/src/main/java/tachyon/web"
+  cp -r "$TMPD/tachyon"/{bin,conf,libexec} "$DISTDIR/tachyon"
 
-  if [[ `uname -a` == Darwin* ]]; then
+  # change TACHYON_JARS
+  sed -i "s/export TACHYON_JARS=\"\$TACHYON_HOME\(.*\)/export TACHYON_JARS=\"\$TACHYON_HOME\/..\/lib\/tachyon-assemblies-${TACHYON_VERSION}-jar-with-dependencies.jar\"/g" "$DISTDIR/tachyon/libexec/tachyon-config.sh"
+
+  #tar xzf "${TACHYON_TGZ}"
+  #cp "tachyon-${TACHYON_VERSION}/core/target/tachyon-${TACHYON_VERSION}-jar-with-dependencies.jar" "$DISTDIR/lib"
+  #mkdir -p "$DISTDIR/tachyon/src/main/java/tachyon/web"
+  #cp -r "tachyon-${TACHYON_VERSION}"/{bin,conf,libexec} "$DISTDIR/tachyon"
+  #cp -r "tachyon-${TACHYON_VERSION}"/core/src/main/java/tachyon/web "$DISTDIR/tachyon/src/main/java/tachyon/web"
+
+  #if [[ `uname -a` == Darwin* ]]; then
     # need to run sed differently on osx
-    nl=$'\n'; sed -i "" -e "s|export TACHYON_JAR=\$TACHYON_HOME/target/\(.*\)|# This is set for spark's make-distribution\\$nl  export TACHYON_JAR=\$TACHYON_HOME/../lib/\1|" "$DISTDIR/tachyon/libexec/tachyon-config.sh"
-  else
-    sed -i "s|export TACHYON_JAR=\$TACHYON_HOME/target/\(.*\)|# This is set for spark's make-distribution\n  export TACHYON_JAR=\$TACHYON_HOME/../lib/\1|" "$DISTDIR/tachyon/libexec/tachyon-config.sh"
-  fi
+  #  nl=$'\n'; sed -i "" -e "s|export TACHYON_JAR=\$TACHYON_HOME/target/\(.*\)|# This is set for spark's make-distribution\\$nl  export TACHYON_JAR=\$TACHYON_HOME/../lib/\1|" "$DISTDIR/tachyon/libexec/tachyon-config.sh"
+  #else
+  #  sed -i "s|export TACHYON_JAR=\$TACHYON_HOME/target/\(.*\)|# This is set for spark's make-distribution\n  export TACHYON_JAR=\$TACHYON_HOME/../lib/\1|" "$DISTDIR/tachyon/libexec/tachyon-config.sh"
+  #fi
 
   popd > /dev/null
   rm -rf "$TMPD"
