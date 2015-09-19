@@ -242,7 +242,7 @@ if [ "$SPARK_TACHYON" == "true" ]; then
   #fi
 
   # use git to checkout the specified branch
-  git clone ${TACHYON_GIT_URL} --branch ${TACHYON_GIT_BRANCH} --single-branch $TMPD/tachyon
+  git clone ${TACHYON_GIT_URL} --branch ${TACHYON_GIT_BRANCH} $TMPD/tachyon
   pushd "$TMPD/tachyon" > /dev/null
   $MVN -DskipTests package
   popd > /dev/null
