@@ -244,7 +244,7 @@ if [ "$SPARK_TACHYON" == "true" ]; then
   # use git to checkout the specified branch
   git clone ${TACHYON_GIT_URL} --branch ${TACHYON_GIT_BRANCH} $TMPD/tachyon
   pushd "$TMPD/tachyon" > /dev/null
-  $MVN -DskipTests package
+  $MVN -Dhadoop.version=2.7.1 -DskipTests package
   popd > /dev/null
 
   # copy necessary files
